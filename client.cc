@@ -394,7 +394,7 @@ bool Client::check_capabilities(const QByteArray &u)
 
 bool Client::parse_idle_ok(const QByteArray &u)
 {
-  if (u.startsWith("+ IDLING")) {
+  if (u.startsWith("+ IDLING") || u.startsWith("+ IDLE ACCEPTED")) {
     state = IDLING;
     return true;
   }
