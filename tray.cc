@@ -5,6 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
+    Copyright (C) 2017  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -59,7 +60,10 @@ Tray::Tray()
   if (!preview_time)
     preview_time = 5;
 
-  tray->setIcon(icon_normal);
+  icon_engine = new TrayIconEngine(icon_normal);
+  QIcon tray_icon = QIcon(icon_engine);
+  tray->setIcon(tray_icon);
+
   connect(tray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(action(QSystemTrayIcon::ActivationReason)));
   tray->show();
 }
@@ -117,6 +121,7 @@ void Tray::setup_menu()
 Tray::~Tray()
 {
   delete tray;
+  delete icon_engine;
 }
 
 void Tray::reconnect()
@@ -134,7 +139,7 @@ void Tray::action(QSystemTrayIcon::ActivationReason r)
     case QSystemTrayIcon::DoubleClick :
       break;
     case QSystemTrayIcon::MiddleClick :
-      //tray->setIcon(icon_normal);
+      //icon_engine->setIcon(icon_normal);
       reconnect();
       break;
     default:
@@ -149,7 +154,7 @@ void Tray::add_info(const QString &a)
 
 void Tray::error(const QString &a)
 {
-  tray->setIcon(icon_error);
+  icon_engine->setIcon(icon_error);
   add_info(a);
 }
 
@@ -163,10 +168,11 @@ void Tray::new_messages(size_t i)
 {
   new_msg = i;
   tray->setToolTip(QString::number(i) + " new messages");
+  icon_engine->setUnread(i);
   if (i)
-    tray->setIcon(icon_newmail);
+    icon_engine->setIcon(icon_newmail);
   else {
-    tray->setIcon(icon_normal);
+    icon_engine->setIcon(icon_normal);
     headers.clear();
   }
 }
@@ -181,13 +187,13 @@ void Tray::show_message()
 {
   if (!new_msg || !show_preview)
     return;
-  tray->showMessage(QString("New messages"), QString::fromUtf8(headers),
-      QSystemTrayIcon::Information, preview_time * 1000);
+  tray->showMessage(QString(QString::number(new_msg) + " New Messages"),
+      QString::fromUtf8(headers), QSystemTrayIcon::Information, preview_time * 1000);
 }
 
 void Tray::connected()
 {
-  tray->setIcon(icon_normal);
+  icon_engine->setIcon(icon_normal);
   if (tray->toolTip() == "Disconnected")
     tray->setToolTip("Connected");
   con->setEnabled(false);
@@ -197,7 +203,7 @@ void Tray::connected()
 
 void Tray::disconnected()
 {
-  tray->setIcon(icon_disconnected);
+  icon_engine->setIcon(icon_disconnected);
   tray->setToolTip("Disconnected");
   headers.clear();
   new_msg = 0;

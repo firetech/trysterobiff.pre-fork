@@ -5,6 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
+    Copyright (C) 2017  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +29,8 @@
 #include <QObject>
 #include <QIcon>
 #include <QSystemTrayIcon>
+
+#include "trayiconengine.hh"
 
 class QAction;
 
@@ -58,10 +61,12 @@ class Tray : public QObject {
     void about();
   private:
     QSystemTrayIcon *tray;
+    TrayIconEngine *icon_engine;
     QAction *con, *discon, *action_info;
     Infobox *infobox;
     QIcon icon_newmail, icon_normal, icon_error, icon_disconnected;
     size_t new_msg;
+    bool icon_count;
     bool show_preview;
     size_t preview_time;
     QByteArray headers;
@@ -71,6 +76,7 @@ class Tray : public QObject {
     void setup_menu();
     void setup_infobox();
     void show_message();
+    void set_icon(QIcon);
 };
 
 #endif
