@@ -284,6 +284,8 @@ void Client::parse(const QByteArray &a)
       parse_idle_ok(u);
       break;
     case IDLING:
+    case STOPPINGIDLE:
+    case IDLEDONE:
       if (tag_ok(u, idle_tag, POSTIDLE)) {
         timer->stop();
         if (old_recent)
@@ -330,6 +332,8 @@ bool Client::parse_error(const QByteArray &u)
 
 bool Client::parse_recent(const QByteArray &u)
 {
+  if (state != IDLING && state != EXAMING)
+    return false;
   const char *status_clause = 0;
   if (has_recent)
     status_clause = "RECENT";
@@ -343,8 +347,12 @@ bool Client::parse_recent(const QByteArray &u)
   int y = u.indexOf(' ', x+1);
   if (y<0)
     return false;
-  if (!u.mid(y+1).startsWith(status_clause))
+  if (u.mid(y+1).startsWith(status_clause)) {
+    if (state == IDLING)
+      state = STOPPINGIDLE;
+  } else {
     return false;
+  }
   bool b = true;
   int msg = u.mid(x+1, y-x-1).toInt(&b);
   //assert(msg >= 0);
@@ -354,10 +362,10 @@ bool Client::parse_recent(const QByteArray &u)
   EMITDEBUG("Minutes since last status push: "
       + QString::number(double(time.restart())/1000.0/60));
   if (preview_enabled || !has_recent) {
-    if (state == IDLING) {
+    if (state == STOPPINGIDLE) {
       old_recent = msg;
       if (!old_recent)
-          emit new_messages(size_t(msg));
+        emit new_messages(size_t(msg));
       done();
     } else { // state == EXAMING
       if (update_always || old_recent != size_t(msg)) {
@@ -483,8 +491,9 @@ void Client::done()
 {
   if (socket->state() != QAbstractSocket::ConnectedState)
     return;
-  if (state != IDLING)
+  if (state != IDLING && state != STOPPINGIDLE)
     return;
+  state = IDLEDONE;
   write_line("done");
 }
 

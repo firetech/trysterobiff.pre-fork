@@ -80,6 +80,8 @@ class Client : public QThread {
       PREIDLE,
       STARTINGIDLE,
       IDLING,
+      STOPPINGIDLE,
+      IDLEDONE,
       POSTIDLE,
       SEARCHING,
       PREFETCH,
