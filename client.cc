@@ -80,6 +80,7 @@ void Client::run()
   preview_enabled = s.value("preview", QVariant(true)).toBool();
   timeout = s.value("timeout", QVariant(30)).toInt()*1000;
   re_idle_intervall = s.value("re_idle", QVariant(28)).toInt()*60*1000;
+  monitor_flags = s.value("monitor_flags", QVariant(false)).toBool();
   use_recent = s.value("use_recent", QVariant(true)).toBool();
   detect_gmail = s.value("detect_gmail", QVariant(true)).toBool();
   update_always = s.value("update_always", QVariant(false)).toBool();
@@ -347,7 +348,8 @@ bool Client::parse_recent(const QByteArray &u)
   int y = u.indexOf(' ', x+1);
   if (y<0)
     return false;
-  if (u.mid(y+1).startsWith(status_clause)) {
+  if (u.mid(y+1).startsWith(status_clause) ||
+      (monitor_flags && u.mid(y+1).startsWith("FETCH (FLAGS"))) {
     if (state == IDLING)
       state = STOPPINGIDLE;
   } else {

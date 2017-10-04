@@ -115,6 +115,7 @@ class Client : public QThread {
                subject, from, date, headers;
     bool preview_enabled;
     size_t re_idle_intervall;
+    bool monitor_flags;
     bool use_recent;
     bool has_recent;
     bool detect_gmail;
