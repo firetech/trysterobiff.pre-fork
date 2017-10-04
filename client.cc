@@ -109,7 +109,7 @@ void Client::setup()
   timer = new QTimer();
   connect(timer, SIGNAL(timeout()), this, SLOT(done()));
 
-  socket->connectToHostEncrypted(host, port);
+  do_connect();
 }
 
 void Client::write_line(const QByteArray &a)
