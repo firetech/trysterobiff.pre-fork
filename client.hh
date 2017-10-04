@@ -5,6 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
+    Copyright (C) 2017  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -74,6 +75,7 @@ class Client : public QThread {
       PRELOGIN,
       LOGGINGIN,
       PREEXAMINE,
+      CAPABILITY,
       EXAMING,
       PREIDLE,
       STARTINGIDLE,
@@ -107,7 +109,7 @@ class Client : public QThread {
     size_t old_recent;
     size_t fetched_rows;
     size_t counter;
-    QByteArray login_tag, examine_tag, idle_tag, search_tag, fetch_tag, query,
+    QByteArray login_tag, capability_tag, examine_tag, idle_tag, search_tag, fetch_tag, query,
                subject, from, date, headers;
     bool preview_enabled;
     size_t re_idle_intervall;
@@ -140,6 +142,7 @@ class Client : public QThread {
     void setup();
 
     void login();
+    void capability();
     void examine();
     void idle();
     void done();

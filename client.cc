@@ -5,6 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
+    Copyright (C) 2017  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -148,6 +149,7 @@ void Client::so_changed(QAbstractSocket::SocketState i)
       state = DISCONNECTED;
       idle_tag.clear();
       login_tag.clear();
+      capability_tag.clear();
       examine_tag.clear();
       search_tag.clear();
       fetch_tag.clear();
@@ -260,7 +262,16 @@ void Client::parse(const QByteArray &a)
     case LOGGINGIN:
       check_capabilities(u);
       if (tag_ok(u, login_tag, PREEXAMINE)) {
-        check_capabilities(u);
+        if (has_idle) {
+          QTimer::singleShot(0, this, SLOT(examine()));
+        } else {
+          QTimer::singleShot(0, this, SLOT(capability()));
+        }
+      }
+      break;
+    case CAPABILITY:
+      check_capabilities(u);
+      if (tag_ok(u, capability_tag, PREEXAMINE)) {
         if (has_idle)
           QTimer::singleShot(0, this, SLOT(examine()));
       }
@@ -369,7 +380,7 @@ bool Client::check_capabilities(const QByteArray &u)
   // 2.) * CAPABILITY ... IDLE ...
   //     -> untagged answer (e.g. gmail servers)
 
-  if (!u.contains("CAPABILITY"))
+  if (!u.contains("CAPABILITY") || u.contains("OK CAPABILITY COMPLETED"))
     return false;
   if (!u.contains(" IDLE")) {
     socket->disconnectFromHost();
@@ -441,6 +452,14 @@ void Client::login()
   state = LOGGINGIN;
   time.start();
   write_line(login_tag + " login " + user.toUtf8() + " " + pw.toUtf8());
+}
+
+void Client::capability()
+{
+  assert(capability_tag.isEmpty());
+  capability_tag = tag();
+  state = CAPABILITY;
+  write_line(capability_tag + " capability");
 }
 
 void Client::examine()
