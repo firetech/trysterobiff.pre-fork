@@ -1,0 +1,7 @@
+*~
+.*.sw?
+*.o
+moc_*
+qrc_*
+Makefile
+trysterobiff
