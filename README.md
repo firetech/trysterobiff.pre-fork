@@ -15,16 +15,19 @@ mail arrival.
 Trysterobiff is written in C++ and uses the Qt library (version 4.x). It is
 licenced under the GPL v3+.
 
-2011-01-08, 2013-03-05
+-- Georg Sauthoff 2011-01-08, 2013-03-05
 
 
-## Contact ##
+Added support for Exchange IMAP servers, (optional) unread count in icon,
+and some other bug fixes and tweaks.
 
-I appreciate feedback and comments:
+-- Joakim Tufvegren 2017-10-04
 
-    mail@georg.so
-    gsauthof@sdf.lonestar.org
 
+## Original Author ##
+
+Georg Sauthoff is the original author of trysterobiff.
+His source can be found at https://bitbucket.org/gsauthof/trysterobiff
 
 ## Install ##
 
@@ -156,6 +159,7 @@ Or you can even change your HOME environment variable:
 * Cyrus IMAP v2.3.13
 * [Dovecot][dove] 1.2.9
 * [Gmail][gmail] (2013-03)
+* Microsoft Exchange Server 2013
 
 ## Misc ##
 
