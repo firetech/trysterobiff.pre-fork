@@ -108,6 +108,7 @@ void Client::setup()
   connect(socket, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
 
   timer = new QTimer();
+  timer->setSingleShot(true);
   connect(timer, SIGNAL(timeout()), this, SLOT(done()));
 
   do_connect();
@@ -288,8 +289,10 @@ void Client::parse(const QByteArray &a)
     case STOPPINGIDLE:
     case IDLEDONE:
       if (tag_ok(u, idle_tag, POSTIDLE)) {
+        bool timer_active = timer->isActive();
         timer->stop();
-        if (old_recent)
+        if (old_recent && timer_active)
+          // Messages exist and idle was not stopped by timer.
           QTimer::singleShot(0, this, SLOT(search()));
         else
           QTimer::singleShot(0, this, SLOT(idle()));
