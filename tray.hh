@@ -76,7 +76,6 @@ class Tray : public QObject {
     void setup_menu();
     void setup_infobox();
     void show_message();
-    void set_icon(QIcon);
 };
 
 #endif
