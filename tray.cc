@@ -45,10 +45,6 @@ Tray::Tray()
   new_msg(0), show_preview(true), preview_time(5),
   pre_reconnect(false)
 {
-  tray = new QSystemTrayIcon(); // WTF?!? crashes in QObjectPrivate::deleteChildren when: this);
-  setup_infobox();
-  setup_menu();
-
   QSettings s;
   icon_newmail = QIcon(s.value("gui/newmail", QVariant(":/icons/mail-message-new.svg")).toString());
   icon_normal = QIcon(s.value("gui/normal", QVariant(":/icons/mail-forward.svg")).toString());
@@ -62,9 +58,13 @@ Tray::Tray()
 
   icon_engine = new TrayIconEngine(icon_normal);
   QIcon tray_icon = QIcon(icon_engine);
-  tray->setIcon(tray_icon);
 
+  tray = new QSystemTrayIcon(tray_icon, this);
   connect(tray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(action(QSystemTrayIcon::ActivationReason)));
+
+  setup_infobox();
+  setup_menu();
+
   tray->show();
 }
 
