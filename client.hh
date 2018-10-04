@@ -121,6 +121,7 @@ class Client : public QThread {
     bool detect_gmail;
     bool update_always;
     bool auto_reconnect;
+    bool should_reconnect;
 
     void write_line(const QByteArray &);
     void error_close(const QString &);
@@ -154,6 +155,7 @@ class Client : public QThread {
 
     void so_changed(QAbstractSocket::SocketState);
     void so_encrypted();
+    void so_disconnected();
     void so_read();
     void ssl_errors(const QList<QSslError> &);
     void tcp_error(QAbstractSocket::SocketError);

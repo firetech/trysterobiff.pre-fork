@@ -85,6 +85,7 @@ void Client::run()
   detect_gmail = s.value("detect_gmail", QVariant(true)).toBool();
   update_always = s.value("update_always", QVariant(false)).toBool();
   auto_reconnect = s.value("auto_reconnect", QVariant(true)).toBool();
+  should_reconnect = false;
 
   QTimer::singleShot(0, this, SLOT(setup()));
   exec();
@@ -106,6 +107,7 @@ void Client::setup()
 
   connect(socket, SIGNAL(encrypted()), this, SIGNAL(connected()));
   connect(socket, SIGNAL(disconnected()), this, SIGNAL(disconnected()));
+  connect(socket, SIGNAL(disconnected()), this, SLOT(so_disconnected()));
 
   timer = new QTimer();
   timer->setSingleShot(true);
@@ -168,15 +170,25 @@ void Client::so_encrypted()
   state = CONNECTED;
 }
 
+void Client::so_disconnected()
+{
+  if (should_reconnect) {
+    should_reconnect = false;
+    do_connect();
+  }
+}
+
 void Client::reconnect()
 {
   if (auto_reconnect) {
     QDateTime current(QDateTime::currentDateTimeUtc());
     QDateTime t(last_connect);
     t.addSecs(60*5);
-    if (t<current)
+    if (t<current) {
       EMITDEBUG("reconnecting after error");
-    do_connect();
+      should_reconnect = true;
+      socket->disconnectFromHost();
+    }
   }
 }
 
