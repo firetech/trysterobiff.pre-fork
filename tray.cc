@@ -120,8 +120,7 @@ void Tray::setup_menu()
 
 Tray::~Tray()
 {
-  delete tray;
-  delete icon_engine;
+  delete tray; // Will delete icon_engine for us.
 }
 
 void Tray::reconnect()
