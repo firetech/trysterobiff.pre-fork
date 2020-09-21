@@ -5,7 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
-    Copyright (C) 2017  Joakim Tufvegren
+    Copyright (C) 2020  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include <QMessageBox>
 #include <QWidgetAction>
 #include <QLabel>
+#include <QTextDocument>
 
 #include <QDebug>
 
@@ -178,7 +179,7 @@ void Tray::new_messages(size_t i)
 
 void Tray::new_headers(const QByteArray &a)
 {
-  headers = a;
+  headers = Qt::escape(QString::fromUtf8(a));
   show_message();
 }
 
@@ -187,7 +188,7 @@ void Tray::show_message()
   if (!new_msg || !show_preview)
     return;
   tray->showMessage(QString(QString::number(new_msg) + " New Messages"),
-      QString::fromUtf8(headers), QSystemTrayIcon::Information, preview_time * 1000);
+      headers, QSystemTrayIcon::Information, preview_time * 1000);
 }
 
 void Tray::connected()

@@ -5,7 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
-    Copyright (C) 2017  Joakim Tufvegren
+    Copyright (C) 2020  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -69,7 +69,7 @@ class Tray : public QObject {
     bool icon_count;
     bool show_preview;
     size_t preview_time;
-    QByteArray headers;
+    QString headers;
     bool pre_reconnect;
     void reconnect();
     void add_info(const QString &);
