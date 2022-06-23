@@ -3,7 +3,7 @@
     This file is part of trysterobiff -
       a cross-plattform non-polling IMAP new-mail systray notifier.
 
-    Copyright (C) 2017  Joakim Tufvegren
+    Copyright (C) 2022  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,8 +32,10 @@ class TrayIconEngine : public QIconEngine {
     TrayIconEngine(QIcon icon);
     void setIcon(QIcon icon);
     void setUnread(size_t count);
+    virtual void virtual_hook(int id, void *data);
     virtual QPixmap pixmap(const QSize &size, QIcon::Mode mode, QIcon::State state);
     virtual void paint (QPainter *painter, const QRect &rect, QIcon::Mode mode, QIcon::State state);
+    virtual QIconEngine *clone(void) const;
   private:
     bool show_unread;
     QIcon base_icon;

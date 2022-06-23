@@ -5,7 +5,7 @@
 
     Copyright (C) 2011  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
-    Copyright (C) 2020  Joakim Tufvegren
+    Copyright (C) 2022  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -64,14 +64,13 @@ class Tray : public QObject {
     TrayIconEngine *icon_engine;
     QAction *con, *discon, *action_info;
     Infobox *infobox;
-    QIcon icon_newmail, icon_normal, icon_error, icon_disconnected;
+    QIcon engine_icon, icon_null, icon_newmail, icon_normal, icon_error, icon_disconnected;
     size_t new_msg;
     bool icon_count;
     bool show_preview;
     size_t preview_time;
     QString headers;
-    bool pre_reconnect;
-    void reconnect();
+    void change_icon(QIcon);
     void add_info(const QString &);
     void setup_menu();
     void setup_infobox();

@@ -3,9 +3,9 @@
     This file is part of trysterobiff -
       a cross-plattform non-polling IMAP new-mail systray notifier.
 
-    Copyright (C) 2011  Georg Sauthoff
+    Copyright (C) 2013  Georg Sauthoff
          email: mail@georg.so or gsauthof@sdf.lonestar.org
-    Copyright (C) 2020  Joakim Tufvegren
+    Copyright (C) 2022  Joakim Tufvegren
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -43,24 +43,24 @@
 
 Tray::Tray()
   : tray(0), con(0), discon(0), action_info(0), infobox(0),
-  new_msg(0), show_preview(true), preview_time(5),
-  pre_reconnect(false)
+  new_msg(0), show_preview(true), preview_time(5)
 {
   QSettings s;
+  icon_null = QIcon();
   icon_newmail = QIcon(s.value("gui/newmail", QVariant(":/icons/mail-message-new.svg")).toString());
   icon_normal = QIcon(s.value("gui/normal", QVariant(":/icons/mail-forward.svg")).toString());
   icon_error = QIcon(s.value("gui/error", QVariant(":/icons/process-stop.svg")).toString());
   icon_disconnected = QIcon(s.value("gui/disconnected", QVariant(":/icons/applications-multimedia.svg")).toString());
+
+  icon_engine = new TrayIconEngine(icon_disconnected);
+  engine_icon = QIcon(icon_engine);
 
   show_preview = s.value("preview", QVariant(true)).toBool();
   preview_time = s.value("preview_time", QVariant(5)).toUInt();
   if (!preview_time)
     preview_time = 5;
 
-  icon_engine = new TrayIconEngine(icon_normal);
-  QIcon tray_icon = QIcon(icon_engine);
-
-  tray = new QSystemTrayIcon(tray_icon, this);
+  tray = new QSystemTrayIcon(engine_icon, this);
   connect(tray, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(action(QSystemTrayIcon::ActivationReason)));
 
   setup_infobox();
@@ -121,13 +121,15 @@ void Tray::setup_menu()
 
 Tray::~Tray()
 {
-  delete tray; // Will delete icon_engine for us.
+  delete tray;
+  // icon_engine is owned and freed by engine_icon
 }
 
-void Tray::reconnect()
+void Tray::change_icon(QIcon new_icon)
 {
-  pre_reconnect = true;
-  emit disconnect_requested();
+  tray->setIcon(icon_null); // Needed to refresh the icon engine
+  icon_engine->setIcon(new_icon);
+  tray->setIcon(engine_icon);
 }
 
 void Tray::action(QSystemTrayIcon::ActivationReason r)
@@ -137,10 +139,6 @@ void Tray::action(QSystemTrayIcon::ActivationReason r)
       show_message();
       break;
     case QSystemTrayIcon::DoubleClick :
-      break;
-    case QSystemTrayIcon::MiddleClick :
-      //icon_engine->setIcon(icon_normal);
-      reconnect();
       break;
     default:
       break;
@@ -154,7 +152,7 @@ void Tray::add_info(const QString &a)
 
 void Tray::error(const QString &a)
 {
-  icon_engine->setIcon(icon_error);
+  change_icon(icon_error);
   add_info(a);
 }
 
@@ -169,17 +167,17 @@ void Tray::new_messages(size_t i)
   new_msg = i;
   tray->setToolTip(QString::number(i) + " new messages");
   icon_engine->setUnread(i);
-  if (i)
-    icon_engine->setIcon(icon_newmail);
-  else {
-    icon_engine->setIcon(icon_normal);
+  if (i) {
+    change_icon(icon_newmail);
+  } else {
+    change_icon(icon_normal);
     headers.clear();
   }
 }
 
 void Tray::new_headers(const QByteArray &a)
 {
-  headers = Qt::escape(QString::fromUtf8(a));
+  headers = QString::fromUtf8(a).toHtmlEscaped();
   show_message();
 }
 
@@ -193,7 +191,7 @@ void Tray::show_message()
 
 void Tray::connected()
 {
-  icon_engine->setIcon(icon_normal);
+  change_icon(icon_normal);
   if (tray->toolTip() == "Disconnected")
     tray->setToolTip("Connected");
   con->setEnabled(false);
@@ -203,16 +201,13 @@ void Tray::connected()
 
 void Tray::disconnected()
 {
-  icon_engine->setIcon(icon_disconnected);
+  change_icon(icon_disconnected);
   tray->setToolTip("Disconnected");
   headers.clear();
   new_msg = 0;
   con->setEnabled(true);
   discon->setEnabled(false);
-  if (pre_reconnect) {
-    pre_reconnect = false;
-    emit connect_requested();
-  }
+  tray->show();
 }
 
 void Tray::preview_toggle(bool b)
@@ -230,7 +225,8 @@ void Tray::about()
   QMessageBox::information(0, tr(IMAPBIFFNAME),
       tr(IMAPBIFFNAME"\n"
          "A non-polling IMAP new-mail systray notifier.\n"
-         "Copyright 2011,2013 Georg Sauthoff\n"
+         "Copyright 2013 Georg Sauthoff\n"
+         "Copyright 2022 Joakin Tufvegren\n"
          "Licenced under the GPLv3+."));
 
 }
