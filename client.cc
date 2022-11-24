@@ -56,7 +56,8 @@
 using namespace std;
 
 Client::Client()
-    : state(DISCONNECTED), last_header(HEADER_NONE), has_idle(false),
+    : state(DISCONNECTED), last_header(HEADER_NONE),
+      has_idle(false), has_auth_plain(false),
       socket(0), timer(0),
       port(0), timeout(30 * 1000),
       old_recent(0), fetched_rows(0), counter(0),
@@ -82,6 +83,7 @@ void Client::run()
   re_idle_intervall = s.value("re_idle", QVariant(28)).toInt()*60*1000;
   monitor_flags = s.value("monitor_flags", QVariant(false)).toBool();
   use_recent = s.value("use_recent", QVariant(true)).toBool();
+  force_login = s.value("force_login", QVariant(false)).toBool();
   detect_gmail = s.value("detect_gmail", QVariant(true)).toBool();
   update_always = s.value("update_always", QVariant(false)).toBool();
   auto_reconnect = s.value("auto_reconnect", QVariant(true)).toBool();
@@ -116,14 +118,11 @@ void Client::setup()
   do_connect();
 }
 
-void Client::write_line(const QByteArray &a)
+void Client::write_line(const QByteArray &a, int mask_debug_from)
 {
-  int u = a.indexOf("login");
-  if (u > -1) {
+  if (mask_debug_from >= 0) {
     QByteArray t(a);
-    int x = t.indexOf(' ', u+6);
-    if (x > -1)
-      t.truncate(x+1);
+    t.truncate(mask_debug_from);
     t.append("***");
     EMITDEBUG(">> " + QString::fromUtf8(t) + '\n');
   } else
@@ -268,27 +267,26 @@ void Client::parse(const QByteArray &a)
   switch (state) {
     case CONNECTED :
       has_idle = false;
+      has_auth_plain = false;
       if (tag_ok(u, untag, PRELOGIN)) {
         check_gmail(u);
-        QTimer::singleShot(0, this, SLOT(login()));
-      }
-      break;
-    case LOGGINGIN:
-      check_capabilities(u);
-      if (tag_ok(u, login_tag, PREEXAMINE)) {
-        if (has_idle) {
-          QTimer::singleShot(0, this, SLOT(examine()));
-        } else {
-          QTimer::singleShot(0, this, SLOT(capability()));
-        }
+        QTimer::singleShot(0, this, SLOT(capability()));
       }
       break;
     case CAPABILITY:
       check_capabilities(u);
       if (tag_ok(u, capability_tag, PREEXAMINE)) {
         if (has_idle)
-          QTimer::singleShot(0, this, SLOT(examine()));
+          QTimer::singleShot(0, this, SLOT(login()));
       }
+      break;
+    case AUTHENTICATING:
+      if (parse_auth_start(u))
+        QTimer::singleShot(0, this, SLOT(authenticate()));
+      break;
+    case LOGGINGIN:
+      if (tag_ok(u, login_tag, PREEXAMINE))
+        QTimer::singleShot(0, this, SLOT(examine()));
       break;
     case EXAMING:
       if (tag_ok(u, examine_tag, PREIDLE))
@@ -407,14 +405,29 @@ bool Client::check_capabilities(const QByteArray &u)
 
   if (!u.contains("CAPABILITY") || u.contains("OK CAPABILITY COMPLETED"))
     return false;
-  if (!u.contains(" IDLE")) {
+  if (!u.contains(" IDLE ") && !u.endsWith(" IDLE")) {
     socket->disconnectFromHost();
     EMITDEBUG("server does NOT have CAPABILITY IDLE");
+    return false;
+  }
+  if (!force_login && (u.contains(" AUTH=PLAIN ") || u.endsWith(" AUTH=PLAIN"))) {
+    has_auth_plain = true;
+  } else if (u.contains(" LOGINDISABLED ") || u.endsWith(" LOGINDISABLED")) {
+    EMITDEBUG("neither AUTH=PLAIN or LOGIN supported (or enabled)");
     return false;
   }
   EMITDEBUG("server DOES have CAPABILITY IDLE");
   has_idle = true;
   return true;
+}
+
+bool Client::parse_auth_start(const QByteArray &u)
+{
+  if (u.startsWith("+")) {
+    state = LOGGINGIN;
+    return true;
+  }
+  return false;
 }
 
 bool Client::parse_idle_ok(const QByteArray &u)
@@ -459,7 +472,7 @@ void Client::parse_header_field(const QByteArray &a)
 }
 
 void Client::parse_header_end(const QByteArray &u)
-{ 
+{
   if (u.startsWith(")")) {
       headers.append(subject + " - " + from + " (" + date + ")\n" );
       subject.clear();
@@ -470,21 +483,36 @@ void Client::parse_header_end(const QByteArray &u)
   }
 }
 
-void Client::login()
-{
-  assert(login_tag.isEmpty());
-  login_tag = tag();
-  state = LOGGINGIN;
-  time.start();
-  write_line(login_tag + " login " + user.toUtf8() + " " + pw.toUtf8());
-}
-
 void Client::capability()
 {
   assert(capability_tag.isEmpty());
   capability_tag = tag();
   state = CAPABILITY;
   write_line(capability_tag + " capability");
+}
+
+void Client::login()
+{
+  assert(login_tag.isEmpty());
+  login_tag = tag();
+  time.start();
+  if (has_auth_plain) {
+    state = AUTHENTICATING;
+    write_line(login_tag + " authenticate plain");
+  } else {
+    state = LOGGINGIN;
+    write_line(login_tag + " login " + user.toUtf8() + " " + pw.toUtf8(), login_tag.size() + 7);
+  }
+}
+
+void Client::authenticate()
+{
+  QByteArray auth;
+  auth.append('\0');
+  auth.append(user.toUtf8());
+  auth.append('\0');
+  auth.append(pw.toUtf8());
+  write_line(auth.toBase64(), 0);
 }
 
 void Client::examine()

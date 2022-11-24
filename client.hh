@@ -73,9 +73,10 @@ class Client : public QThread {
       DISCONNECTED,
       CONNECTED,
       PRELOGIN,
+      CAPABILITY,
+      AUTHENTICATING,
       LOGGINGIN,
       PREEXAMINE,
-      CAPABILITY,
       EXAMING,
       PREIDLE,
       STARTINGIDLE,
@@ -102,6 +103,7 @@ class Client : public QThread {
     Header last_header;
 
     bool has_idle;
+    bool has_auth_plain;
 
     QSslSocket *socket;
     QTimer *timer;
@@ -117,13 +119,14 @@ class Client : public QThread {
     size_t re_idle_intervall;
     bool monitor_flags;
     bool use_recent;
+    bool force_login;
     bool has_recent;
     bool detect_gmail;
     bool update_always;
     bool auto_reconnect;
     bool should_reconnect;
 
-    void write_line(const QByteArray &);
+    void write_line(const QByteArray &, int mask_debug_from = -1);
     void error_close(const QString &);
 
     QByteArray tag();
@@ -135,6 +138,7 @@ class Client : public QThread {
     bool parse_recent(const QByteArray &);
     bool check_capabilities(const QByteArray &u);
     bool check_gmail(const QByteArray &u);
+    bool parse_auth_start(const QByteArray &u);
     bool parse_idle_ok(const QByteArray &u);
     void parse_search_res(const QByteArray &u);
     void parse_header_field(const QByteArray &a);
@@ -145,8 +149,9 @@ class Client : public QThread {
   private slots:
     void setup();
 
-    void login();
     void capability();
+    void login();
+    void authenticate();
     void examine();
     void idle();
     void done();
