@@ -36,7 +36,7 @@
  *     IMAP4 Implementation Recommendations              September 1999
  * http://tools.ietf.org/html/rfc5322
  *     Internet Message Format                           October 2008
- * http://tools.ietf.org/html/rfc4234 
+ * http://tools.ietf.org/html/rfc4234
  *     Augmented BNF for Syntax Specifications: ABNF     October 2005
  *
  */
@@ -202,7 +202,8 @@ void Client::ssl_errors(const QList<QSslError> &errors)
 
 void Client::tcp_error(QAbstractSocket::SocketError e)
 {
-  emit error("TCP error: " + socket->errorString() + " == " + QString::number(int(e)));
+  emit error("TCP error: " + socket->errorString() + " == " +
+               QString::number(int(e)));
   reconnect();
 }
 
@@ -501,7 +502,8 @@ void Client::login()
     write_line(login_tag + " authenticate plain");
   } else {
     state = LOGGINGIN;
-    write_line(login_tag + " login " + user.toUtf8() + " " + pw.toUtf8(), login_tag.size() + 7);
+    write_line(login_tag + " login " + user.toUtf8() + " " + pw.toUtf8(),
+               login_tag.size() + 7);
   }
 }
 
@@ -629,5 +631,3 @@ void Client::error_close(const QString &s)
     EMITDEBUG("error close, but closing or closed");
   socket->disconnectFromHost();
 }
-
-
