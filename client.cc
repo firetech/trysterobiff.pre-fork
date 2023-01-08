@@ -433,7 +433,8 @@ bool Client::parse_auth_start(const QByteArray &u)
 
 bool Client::parse_idle_ok(const QByteArray &u)
 {
-  if (u.startsWith("+ IDLING") || u.startsWith("+ IDLE ACCEPTED")) {
+  if (u.startsWith("+ IDLING") || u.startsWith("+ IDLE ACCEPTED") ||
+      u.startsWith("+ ENTERING ENHANCED IDLE MODE")) {
     state = IDLING;
     return true;
   }
